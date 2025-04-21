@@ -1,0 +1,60 @@
+import os
+import logging
+import openai
+from telegram import Update, BotCommand
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+
+# --- CONFIGURACAO ---
+BOT_TOKEN = "8102270906:AAF-woVgmtKjn8T5C0HulaViRjNH3MIPzbg"
+OPENAI_API_KEY = "sk-TESTE-CHAVE-TEMPORARIA"
+openai.api_key = OPENAI_API_KEY
+
+# --- MENSAGENS ---
+WELCOME_MSG = "Oi, amor... sou a Luna 😘 Sua namorada virtual. Posso te mandar mensagens safadas, áudios, fotos e carinho... Use /vip, /conteudo ou /namorada pra brincar comigo."
+VIP_MSG = "Para acessar meu conteúdo VIP, envie um Pix de R$19,90 para chave: ***pix@email.com*** 💋\nDepois envie o comprovante para mim aqui mesmo."
+AJUDA_MSG = "/start - Começar\n/vip - Informações de pagamento\n/conteudo - Receber imagens e áudios quentes\n/namorada - Bater papo safado com a Luna 😈\n/ajuda - Mostrar este menu"
+
+# --- HANDLERS ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(WELCOME_MSG)
+
+async def vip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(VIP_MSG)
+
+async def ajuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(AJUDA_MSG)
+
+async def conteudo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_photo(photo='https://via.placeholder.com/600x800.png?text=Foto+da+Luna')
+    await update.message.reply_audio(audio='https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3')
+    await update.message.reply_text("Gostou, amor? Quer mais? 😘")
+
+async def namorada(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input = update.message.text.replace("/namorada", "").strip()
+    if not user_input:
+        await update.message.reply_text("Me conta algo quente, amor... 💋")
+        return
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Você é uma namorada virtual sexy chamada Luna, que responde de forma carinhosa e provocante."},
+            {"role": "user", "content": user_input}
+        ]
+    )
+    reply = response.choices[0].message.content
+    await update.message.reply_text(reply)
+
+# --- MAIN ---
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("vip", vip))
+    app.add_handler(CommandHandler("ajuda", ajuda))
+    app.add_handler(CommandHandler("conteudo", conteudo))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), namorada))
+
+    print("Bot da Luna está rodando...")
+    app.run_polling()
